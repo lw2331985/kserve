@@ -41,14 +41,15 @@ class XGBoostModel(kserve.Model):
     def load(self) -> bool:
         model_path = pathlib.Path(kserve.Storage.download(self.model_dir))
         paths = [os.path.join(model_path, MODEL_BASENAME + model_extension) for model_extension in MODEL_EXTENSIONS]
-        existing_paths = [path for path in paths if path.exists()]
+        existing_paths = [path for path in paths if os.path.exists(path)]
         if len(existing_paths) == 0:
             raise ModelMissingError(model_path)
         elif len(existing_paths) > 1:
             raise RuntimeError('More than one model file is detected, '
                                f'Only one is allowed within model_dir: {model_path}')
         if existing_paths[0].endswith(".json"):
-            self._booster = xgb.Booster().load_model(existing_paths[0])
+            self._booster = xgb.Booster()
+            self._booster.load_model(existing_paths[0])
             self._predict_dmatrix = True
         else:
             self._booster = joblib.load(existing_paths[0])
